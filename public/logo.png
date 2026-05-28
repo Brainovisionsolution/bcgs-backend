@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script>
+  (function () {
+    const theme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (theme === "dark" || (!theme && prefersDark)) {
+      document.documentElement.classList.add("dark");
+    }
+  })();
+</script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+
+  <title>Brainovision Technologies | Empowering Innovation Through Tech</title>
+  <meta name="description" content="Brainovision Technologies empowers innovation through cutting-edge solutions in AI, software development, training, and tech education across India." />
+  <meta name="keywords" content="Brainovision, AI, Machine Learning, Software Development, Training, EdTech, Innovation, India" />
+  <meta name="author" content="Brain O Vision Solutions India Pvt.Ltd." />
+
+
+  <meta property="og:title" content="Brainovision Technologies" />
+  <meta property="og:description" content="Empowering innovation through AI, software, and education. Discover our solutions and impact." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://brainovision.com" />
+  <meta property="og:image" content="https://brainovision.com/logo.png" /> <!-- Update path if needed -->
+
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Brainovision Technologies" />
+  <meta name="twitter:description" content="Explore how Brainovision leads in tech innovation, AI, and education." />
+  <meta name="twitter:image" content="https://brainovision.com/logo.png" /> <!-- Update path if needed -->
+
+  
+  <meta name="theme-color" content="#d4af37" />
+
+  
+  <link rel="icon" href="/logos/bovyellow.png" />
+
+
+  <script type="module" crossorigin src="/assets/index-C6bc8FAR.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BUyXZNfn.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+  </body>
+</html>
