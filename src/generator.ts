@@ -152,7 +152,16 @@ export async function generateCertificatePDF(certData: any, template: any, bgBas
   `
 
   // 4. Launch Puppeteer to capture
-  const browser = await puppeteer.launch({ headless: true })
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-web-security'
+    ]
+  })
   const page = await browser.newPage()
   await page.setViewport({ width: pdfWidth, height: pdfHeight, deviceScaleFactor: 2 })
   await page.setContent(htmlContent, { waitUntil: 'networkidle0' })
