@@ -95,13 +95,31 @@ router.post('/upload-bulk', upload.fields([
 
   parseString(fileContent, { headers: true })
     .on('data', (row) => results.push(row))
+    .on('error', (err) => {
+      console.error('CSV Parsing Error:', err);
+      // Clean up files immediately on error
+      if (fs.existsSync(csvFile.path)) fs.unlinkSync(csvFile.path)
+      if (backgroundFile && fs.existsSync(backgroundFile.path)) fs.unlinkSync(backgroundFile.path)
+      if (logoFile && fs.existsSync(logoFile.path)) fs.unlinkSync(logoFile.path)
+      
+      if (!res.headersSent) {
+        res.status(400).json({ 
+          error: 'Failed to parse CSV file', 
+          details: err.message,
+          hint: 'Ensure your CSV has headers and valid data rows'
+        });
+      }
+    })
     .on('end', async () => {
       // Process rows
-      fs.unlinkSync(csvFile.path) // Clean up CSV
-      if (backgroundFile) fs.unlinkSync(backgroundFile.path) // Clean up background
-      if (logoFile) fs.unlinkSync(logoFile.path) // Clean up logo
+      if (fs.existsSync(csvFile.path)) fs.unlinkSync(csvFile.path) // Clean up CSV
+      if (backgroundFile && fs.existsSync(backgroundFile.path)) fs.unlinkSync(backgroundFile.path) // Clean up background
+      if (logoFile && fs.existsSync(logoFile.path)) fs.unlinkSync(logoFile.path) // Clean up logo
+
+      if (res.headersSent) return; // Prevent crash if .on('error') already responded
 
       const generatedCerts = []
+      const errors = []
       for (const [index, row] of results.entries()) {
         try {
           let templateId = req.body.template_id
@@ -124,6 +142,7 @@ router.post('/upload-bulk', upload.fields([
 
           if (!template) {
             console.error('No templates available')
+            errors.push(`Row ${index + 1}: No template available`)
             continue;
           }
 
@@ -185,12 +204,31 @@ router.post('/upload-bulk', upload.fields([
           }
 
           generatedCerts.push(savedCert)
-        } catch (err) {
+        } catch (err: any) {
           console.error('Row error:', err)
+          errors.push(`Row ${index + 1}: ${err.message}`)
         }
       }
 
-      res.json({ message: 'Success', generated: generatedCerts.length })
+      if (generatedCerts.length === 0 && errors.length > 0) {
+        if (!res.headersSent) {
+          res.status(400).json({ 
+            error: 'Failed to generate certificates', 
+            details: errors,
+            hint: 'This often occurs due to browser rendering issues. Ensure templates are properly configured and server has sufficient resources.'
+          })
+        }
+        return
+      }
+
+      if (!res.headersSent) {
+        const response: any = { message: 'Success', generated: generatedCerts.length }
+        if (errors.length > 0) {
+          response.warnings = `${errors.length} rows failed to process`
+          response.failedRows = errors
+        }
+        res.json(response)
+      }
     })
 })
 
@@ -231,7 +269,18 @@ router.post('/upload-bulk-offer-letters', upload.fields([
     .on('data', (row) => results.push(row))
     .on('error', (err) => {
       console.error('CSV Parsing Error:', err);
-      if (!res.headersSent) res.status(400).json({ error: 'CSV parsing failed', details: [err.message] });
+      // Clean up files immediately on error
+      if (fs.existsSync(csvFile.path)) fs.unlinkSync(csvFile.path)
+      if (backgroundFile && fs.existsSync(backgroundFile.path)) fs.unlinkSync(backgroundFile.path)
+      if (logoFile && fs.existsSync(logoFile.path)) fs.unlinkSync(logoFile.path)
+      
+      if (!res.headersSent) {
+        res.status(400).json({ 
+          error: 'Failed to parse CSV file', 
+          details: err.message,
+          hint: 'Ensure your CSV has headers and valid data rows'
+        });
+      }
     })
     .on('end', async () => {
       try {
@@ -307,11 +356,24 @@ router.post('/upload-bulk-offer-letters', upload.fields([
         }
         
         if (generatedOffers.length === 0 && errors.length > 0) {
-          if (!res.headersSent) res.status(400).json({ error: 'Failed to generate offers', details: errors })
+          if (!res.headersSent) {
+            res.status(400).json({ 
+              error: 'Failed to generate offer letters', 
+              details: errors,
+              hint: 'This often occurs due to browser rendering issues. Ensure templates are properly configured and server has sufficient resources.'
+            })
+          }
           return
         }
 
-        if (!res.headersSent) res.json({ message: 'Success', generated: generatedOffers.length })
+        if (!res.headersSent) {
+          const response: any = { message: 'Success', generated: generatedOffers.length }
+          if (errors.length > 0) {
+            response.warnings = `${errors.length} rows failed to process`
+            response.failedRows = errors
+          }
+          res.json(response)
+        }
       } catch (globalErr: any) {
         console.error('Unhandled error in CSV generation:', globalErr)
         if (!res.headersSent) res.status(500).json({ error: 'Server crashed during generation', details: [globalErr.message] })
